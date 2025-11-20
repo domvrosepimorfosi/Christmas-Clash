@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Christmas Clash (Multi-Set)</title>
+    <style>
+        /* CSS STYLES */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            background-image: linear-gradient(to bottom, #1a1a1a, #2c3e50);
+            color: white;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+        }
+
+        .logo {
+            display: block;
+            margin: 5px auto;
+            max-width: 80px;
+            height: auto;
+        }
+
+        h1 {
+            margin: 5px 0 10px 0;
+            color: #f1c40f;
+            font-size: 28px;
+            text-shadow: 2px 2px #000;
+            text-transform: uppercase;
+        }
+
+        /* GAME SELECTOR */
+        .set-selector-container {
+            margin-bottom: 15px;
+        }
+        select {
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 10px;
+            border: 2px solid #f1c40f;
+            background: #333;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* SCOREBOARD */
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            width: 95%;
+            max-width: 800px;
+            margin-bottom: 15px;
+            gap: 20px;
+        }
+
+        .team-box {
+            flex: 1;
+            background-color: #333;
+            border: 4px solid #555;
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+        }
+
+        .team-red { border-color: #c0392b; background-color: #350b0b; }
+        .team-green { border-color: #27ae60; background-color: #0b3518; }
+
+        .team-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        .team-score { font-size: 36px; font-weight: bold; font-family: 'Courier New', monospace; }
+
+        .score-btn {
+            font-size: 14px;
+            padding: 8px 15px;
+            margin: 2px;
+            cursor: pointer;
+            background: #555;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .score-btn:active { transform: scale(0.95); }
+
+        /* GAME GRID */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            width: 98%;
+            max-width: 1000px;
+            flex-grow: 1;
+        }
+
+        .category-header {
+            background-color: #f39c12;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+            padding: 15px 5px;
+            border-radius: 5px;
+            font-size: 18px; /* Larger for Smartboard */
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 0 #d35400;
+        }
+
+        .question-btn {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            font-size: 32px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            height: 90px; /* Taller buttons */
+            box-shadow: 0 6px 0 #bdc3c7;
+            transition: transform 0.1s;
+        }
+
+        .question-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #bdc3c7; }
+        
+        .question-btn.disabled { 
+            background-color: #333; 
+            color: #555; 
+            box-shadow: none; 
+            pointer-events: none; 
+            transform: translateY(4px);
+        }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-card {
+            background-color: white;
+            color: #333;
+            width: 90%;
+            max-width: 700px;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 10px solid #d4af37;
+        }
+
+        .modal-points { font-size: 24px; color: #d4af37; font-weight: bold; margin-bottom: 10px; }
+        .modal-question { font-size: 36px; margin-bottom: 30px; font-weight: bold; line-height: 1.3; }
+        .modal-answer { font-size: 32px; color: #27ae60; margin-bottom: 30px; display: none; font-weight: bold; border-top: 2px dashed #ccc; padding-top: 20px; }
+
+        .action-btn {
+            padding: 15px 40px;
+            font-size: 22px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        .btn-reveal { background-color: #3498db; color: white; }
+        .btn-award-red { background-color: #c0392b; color: white; display: none; }
+        .btn-award-green { background-color: #27ae60; color: white; display: none; }
+        .btn-close { background-color: #7f8c8d; color: white; }
+
+        .footer {
+            margin-top: auto;
+            padding-top: 10px;
+            font-size: 11px;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="pdhub-logo.png" alt="PDHub Logo" class="logo">
+    <h1>🎄 Christmas Clash 🎄</h1>
+
+    <div class="set-selector-container">
+        <select id="game-select" onchange="changeGameSet()">
+            <option value="0">Set 1: The Classics</option>
+            <option value="1">Set 2: Movies & Food</option>
+            <option value="2">Set 3: Winter Fun</option>
+        </select>
+    </div>
+
+    <div class="scoreboard">
+        <div class="team-box team-red">
+            <div class="team-name">🎅 Team Santa</div>
+            <div class="team-score" id="score-red">0</div>
+            <button class="score-btn" onclick="adjustScore('red', -50)">-50</button>
+            <button class="score-btn" onclick="adjustScore('red', 50)">+50</button>
+        </div>
+        <div class="team-box team-green">
+            <div class="team-name">🧟 Team Grinch</div>
+            <div class="team-score" id="score-green">0</div>
+            <button class="score-btn" onclick="adjustScore('green', -50)">-50</button>
+            <button class="score-btn" onclick="adjustScore('green', 50)">+50</button>
+        </div>
+    </div>
+
+    <div class="game-board" id="game-grid">
+        </div>
+
+    <div class="footer">
+        🎄🎅 Created by Panagiotis Domvros, English and Drama Teacher, All Rights Reserved 🎅🎄
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal-card">
+            <div class="modal-points" id="q-points">100 POINTS</div>
+            <div class="modal-question" id="q-text">...</div>
+            
+            <button class="action-btn btn-reveal" id="btn-reveal" onclick="revealAnswer()">Show Answer</button>
+            
+            <div class="modal-answer" id="q-answer">...</div>
+            
+            <div id="award-section">
+                <button class="action-btn btn-award-red" onclick="awardPoints('red')">Santa Wins</button>
+                <button class="action-btn btn-award-green" onclick="awardPoints('green')">Grinch Wins</button>
+                <button class="action-btn btn-close" onclick="closeModal()">No Winner</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        //  DATABASE OF 3 GAME SETS
+        // ==========================================
+        const gameSets = [
+            // SET 1: THE CLASSICS
+            {
+                categories: ["Vocab", "Grammar", "Trivia", "Song Lyrics"],
+                questions: {
+                    0: { // Vocab
+                        100: { q: "What do you wear on your hands when it is cold?", a: "Gloves / Mittens" },
+                        200: { q: "What vegetable serves as a snowman's nose?", a: "A Carrot" },
+                        300: { q: "Odd one out: <br>Sleigh, Reindeer, Beach, Snow", a: "Beach" },
+                        400: { q: "What is the word for the socks we hang by the fire?", a: "Stockings" }
+                    },
+                    1: { // Grammar
+                        100: { q: "Correct the mistake: <br>'Santa <strong>have</strong> a big beard.'", a: "Santa <strong>has</strong> a big beard." },
+                        200: { q: "Past Simple of 'Fly': <br>'Yesterday, Santa ______ to London.'", a: "Flew" },
+                        300: { q: "Make this negative: <br>'I like Brussels sprouts.'", a: "I <strong>don't</strong> like Brussels sprouts." },
+                        400: { q: "Correct the mistake: <br>'I have seen Santa yesterday.'", a: "I <strong>saw</strong> Santa yesterday." }
+                    },
+                    2: { // Trivia
+                        100: { q: "What animal pulls Santa's sleigh?", a: "Reindeer" },
+                        200: { q: "What date is Christmas Day?", a: "December 25th" },
+                        300: { q: "How many reindeer does Santa have? (Including Rudolph)", a: "Nine (9)" },
+                        400: { q: "In the UK, what do people typically eat for Christmas lunch?", a: "Turkey" }
+                    },
+                    3: { // Songs
+                        100: { q: "Finish the lyric: <br>'Jingle bells, jingle bells, jingle all the ______'", a: "Way" },
+                        200: { q: "Finish the lyric: <br>'Rudolph the Red-Nosed Reindeer, had a very shiny ______'", a: "Nose" },
+                        300: { q: "Finish the lyric: <br>'We wish you a Merry Christmas and a Happy New ______'", a: "Year" },
+                        400: { q: "Finish the lyric: <br>'Last Christmas, I gave you my ______'", a: "Heart" }
+                    }
+                }
+            },
+            // SET 2: MOVIES & FOOD
+            {
+                categories: ["Movies", "Food", "Traditions", "Santa's Job"],
+                questions: {
+                    0: { // Movies
+                        100: { q: "Who is the green creature who hates Christmas?", a: "The Grinch" },
+                        200: { q: "In 'Home Alone', where does the family go on holiday?", a: "Paris (France)" },
+                        300: { q: "What is the name of the snowman who comes to life?", a: "Frosty" },
+                        400: { q: "In the movie 'Elf', what is the Elf's name?", a: "Buddy" }
+                    },
+                    1: { // Food
+                        100: { q: "What drink do we leave for Santa?", a: "Milk (or Sherry)" },
+                        200: { q: "What sweet brown stick looks like a J?", a: "Candy Cane" },
+                        300: { q: "What vegetable do British people hate at Christmas?", a: "Brussels Sprouts" },
+                        400: { q: "What spicy biscuit is made into the shape of a man?", a: "Gingerbread Man" }
+                    },
+                    2: { // Traditions
+                        100: { q: "Where do we put the star?", a: "On top of the tree" },
+                        200: { q: "What do people send to friends in the mail?", a: "Christmas Cards" },
+                        300: { q: "What plant do people kiss under?", a: "Mistletoe" },
+                        400: { q: "What day is December 26th?", a: "Boxing Day" }
+                    },
+                    3: { // Santa's Job
+                        100: { q: "How does Santa enter the house?", a: "Down the Chimney" },
+                        200: { q: "Where does Santa live?", a: "The North Pole" },
+                        300: { q: "Who makes the toys?", a: "The Elves" },
+                        400: { q: "What list does Santa check twice?", a: "The Naughty and Nice List" }
+                    }
+                }
+            },
+            // SET 3: WINTER FUN (Mixed)
+            {
+                categories: ["Winter Words", "True/False", "Past Tense", "Riddles"],
+                questions: {
+                    0: { // Winter Words
+                        100: { q: "Water that freezes into white crystals falling from the sky.", a: "Snow" },
+                        200: { q: "You wear this around your neck to stay warm.", a: "Scarf" },
+                        300: { q: "A piece of ice that hangs from a roof.", a: "Icicle" },
+                        400: { q: "A violent winter storm with strong winds.", a: "Blizzard" }
+                    },
+                    1: { // True/False
+                        100: { q: "True or False: <br>Santa wears green boots.", a: "False (Black)" },
+                        200: { q: "True or False: <br>Christmas is in Summer in Australia.", a: "True" },
+                        300: { q: "True or False: <br>Jingle Bells was the first song played in space.", a: "True" },
+                        400: { q: "True or False: <br>Male reindeer lose their antlers in winter.", a: "True (Santa's reindeer might be female!)" }
+                    },
+                    2: { // Past Tense
+                        100: { q: "Past of 'Give': <br>Santa _____ me a bike.", a: "Gave" },
+                        200: { q: "Past of 'Buy': <br>Mum _____ a turkey.", a: "Bought" },
+                        300: { q: "Past of 'Eat': <br>Rudolph _____ the carrot.", a: "Ate" },
+                        400: { q: "Past of 'Bring': <br>The elves _____ the toys.", a: "Brought" }
+                    },
+                    3: { // Riddles
+                        100: { q: "I have a face and hands, but no arms or legs. What am I?", a: "A Clock" },
+                        200: { q: "It is easy to get into, but hard to get out of.", a: "Trouble (or Bed!)" },
+                        300: { q: "I drop from the sky. I am white. But I am not milk.", a: "Snow" },
+                        400: { q: "What has to be broken before you can use it?", a: "An Egg" }
+                    }
+                }
+            }
+        ];
+
+        let currentSetIndex = 0;
+        let scores = { red: 0, green: 0 };
+        let currentPoints = 0;
+        let currentBtn = null;
+
+        // --- INIT ---
+        function initGame() {
+            renderBoard();
+        }
+
+        function changeGameSet() {
+            const selector = document.getElementById('game-select');
+            currentSetIndex = parseInt(selector.value);
+            
+            // Reset scores when changing sets? Optional. 
+            // Let's keep scores but reset the board.
+            if(confirm("Change question set? This will reset the board (but keep scores).")) {
+                renderBoard();
+            } else {
+                // Revert selector if cancelled
+                // (Complex to revert select without tracking previous value, keeping simple for now)
+            }
+        }
+
+        function renderBoard() {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = ""; // Clear existing
+
+            const set = gameSets[currentSetIndex];
+
+            // 1. Render Headers
+            set.categories.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = 'category-header';
+                div.innerText = cat;
+                grid.appendChild(div);
+            });
+
+            // 2. Render Buttons (Row by Row: 100, 200, 300, 400)
+            const points = [100, 200, 300, 400];
+            
+            points.forEach(pt => {
+                // For each category (col) 0 to 3
+                for (let col = 0; col < 4; col++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'question-btn';
+                    btn.innerText = pt;
+                    btn.onclick = () => openQuestion(col, pt, btn);
+                    grid.appendChild(btn);
+                }
+            });
+        }
+
+        // --- GAME LOGIC ---
+        function openQuestion(catIndex, points, btnElement) {
+            currentPoints = points;
+            currentBtn = btnElement;
+
+            const set = gameSets[currentSetIndex];
+            const qData = set.questions[catIndex][points];
+            
+            document.getElementById('q-points').innerText = points + " POINTS";
+            document.getElementById('q-text').innerHTML = qData.q;
+            document.getElementById('q-answer').innerHTML = qData.a;
+            
+            // Reset Modal State
+            document.getElementById('q-answer').style.display = 'none';
+            document.getElementById('btn-reveal').style.display = 'inline-block';
+            document.querySelector('.btn-award-red').style.display = 'none';
+            document.querySelector('.btn-award-green').style.display = 'none';
+            
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function revealAnswer() {
+            document.getElementById('q-answer').style.display = 'block';
+            document.getElementById('btn-reveal').style.display = 'none';
+            
+            document.querySelector('.btn-award-red').style.display = 'inline-block';
+            document.querySelector('.btn-award-green').style.display = 'inline-block';
+        }
+
+        function awardPoints(team) {
+            scores[team] += currentPoints;
+            updateScoreboard();
+            closeModal(true);
+        }
+
+        function adjustScore(team, amount) {
+            scores[team] += amount;
+            updateScoreboard();
+        }
+
+        function updateScoreboard() {
+            document.getElementById('score-red').innerText = scores.red;
+            document.getElementById('score-green').innerText = scores.green;
+        }
+
+        function closeModal(answered = false) {
+            document.getElementById('modal').style.display = 'none';
+            if (answered && currentBtn) {
+                currentBtn.classList.add('disabled');
+                currentBtn.innerText = ""; // Hide points to show it's done
+            }
+        }
+
+        // Start
+        initGame();
+
+    </script>
+</body>
+</html>
